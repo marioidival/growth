@@ -11,11 +11,13 @@ pub mod core {
         trait Country {}
 
         pub trait CountryRepository {
-            fn growth_info(&self) -> crate::core::domain::Country;
+            fn growth_info(&self, key: String) -> Option<&crate::core::domain::Country>;
             fn size(&self) -> usize;
-            fn update_growth(&mut self);
-            fn create_country_growth_info(&mut self);
-            fn remove_country_growth_info(&mut self);
+            fn update_growth(&mut self, country: crate::core::domain::Country) -> bool;
+            fn create_country_growth_info(&mut self, country: crate::core::domain::Country)
+                -> bool;
+            fn remove_country_growth_info(&mut self, country: crate::core::domain::Country)
+                -> bool;
         }
     }
 
@@ -44,60 +46,77 @@ pub mod adapters {
         }
 
         impl CountryMemoryRepository {
-            fn new() -> Self {
+            pub fn new() -> Self {
                 let mut db: HashMap<String, Country> = HashMap::new();
                 CountryMemoryRepository { db }
             }
         }
         impl CountryRepository for CountryMemoryRepository {
-            fn growth_info(&self) -> crate::core::domain::Country {
-                todo!()
+            fn growth_info(&self, key: String) -> Option<&crate::core::domain::Country> {
+                self.db.get(&key)
             }
 
             fn size(&self) -> usize {
                 self.db.len()
             }
 
-            fn update_growth(&mut self) {
-                todo!()
+            fn update_growth(&mut self, country: crate::core::domain::Country) -> bool {
+                let key = format!("{}{}{}", country.name, country.indicator, country.year);
+                self.db.insert(key, country);
+                true
             }
 
-            fn create_country_growth_info(&mut self) {
-                todo!()
+            fn create_country_growth_info(
+                &mut self,
+                country: crate::core::domain::Country,
+            ) -> bool {
+                // build key
+                let key = format!("{}{}{}", country.name, country.indicator, country.year);
+                match self.db.insert(key, country) {
+                    Some(_) => false,
+                    None => true,
+                }
             }
 
-            fn remove_country_growth_info(&mut self) {
-                todo!()
+            fn remove_country_growth_info(
+                &mut self,
+                country: crate::core::domain::Country,
+            ) -> bool {
+                let key = format!("{}{}{}", country.name, country.indicator, country.year);
+                match self.db.remove(&key) {
+                    Some(_) => true,
+                    None => false,
+                }
             }
         }
     }
     pub mod http {
-        use actix_web::{web, App, HttpServer, Responder};
+        use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 
         pub mod controllers {
 
             pub async fn status_handler() -> impl super::Responder {
-                unimplemented!()
+                super::HttpResponse::Ok().body("oi")
             }
 
             pub async fn size_handler() -> impl super::Responder {
-                unimplemented!()
+                super::HttpResponse::Ok().body("oi")
             }
 
             pub async fn growth_information_handler() -> impl super::Responder {
-                unimplemented!()
+                super::HttpResponse::Ok().body("oi")
             }
 
             pub async fn save_growth_information_handler() -> impl super::Responder {
-                unimplemented!()
+                super::HttpResponse::Ok().body("oi")
             }
 
             pub async fn update_growth_information_handler() -> impl super::Responder {
-                unimplemented!()
+                super::HttpResponse::Ok().body("oi")
             }
 
             pub async fn delete_growth_information_handler() -> impl super::Responder {
-                unimplemented!()
+                super::HttpResponse::Ok().body("oi")
             }
         }
 
@@ -147,6 +166,7 @@ use std::io;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
+    let _repository = adapters::memory::CountryMemoryRepository::new();
     let new_server = adapters::http::Server::new();
     new_server.start().await?;
     Ok(())
